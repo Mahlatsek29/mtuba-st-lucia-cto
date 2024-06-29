@@ -16,22 +16,22 @@
         </a>
       </div>
       <nav class="flex flex-1 flex-col items-start gap-2 overflow-auto px-2 py-4">
-        <!-- {#each ['Destinations', 'Activities', 'Accommodations', 'Reviews', 'Settings'] as item}
+        {#each ['Destinations', 'Activities', 'Accommodations', 'Reviews', 'Settings'] as item}
           
-            href="#"
+        <a    href="#"
             class="flex w-full items-center gap-2 rounded-md px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
-            <svelte:component this={{ Destinations: MapPinIcon, Activities: ActivityIcon, Accommodations: HomeIcon, Reviews: StarIcon, Settings: SettingsIcon }[item]} class="h-5 w-5" />
+            <!-- <svelte:component this={{ Destinations: MapPinIcon, Activities: ActivityIcon, Accommodations: HomeIcon, Reviews: StarIcon, Settings: SettingsIcon }[item]} class="h-5 w-5" /> -->
             <span class="text-sm font-medium sm:block">{item}</span>
           </a>
-        {/each} -->
+        {/each}
       </nav>
     </aside>
     
     <div class="flex flex-1 flex-col">
       <header class="sticky top-0 z-20 flex h-14 items-center gap-4 border-b bg-background px-4 sm:h-16 sm:px-6">
         <button on:click={() => isMenuOpen = !isMenuOpen} class="sm:hidden">
-          <Menu class="h-6 w-6" />
+         
           <span class="sr-only">Toggle menu</span>
         </button>
         <div class="flex-1">
