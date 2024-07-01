@@ -2,13 +2,22 @@
 	
     import { Input } from "$lib/components/ui/input";
 	  import { Label } from "$lib/components/ui/label";
-	  import { Button } from "$lib/components/ui/button";
 	import { get } from 'svelte/store';
 	import { authHandles } from '../store/store';
+	import { onMount } from 'svelte';
+
 
 	let email = '';
 	let password = '';
 	let errorMessage = '';
+
+let Button;
+onMount(async () => {
+  const module = await import('$lib/components/ui/button/button.svelte');
+  Button = module.default;
+});
+
+
 
 	async function handleLogin() {
 		try {

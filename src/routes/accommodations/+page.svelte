@@ -16,13 +16,15 @@
         uploadBytes,
         getDownloadURL,
     } from "firebase/storage";
-    import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
- 
+  
+    import { collection, addDoc, query, where, getDocs, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+    
+  
     let user = null;
     let directories = [];
     let isEditing = false;
     let dialogOpen = false;
-
+  
     let currentDirectory = {
         id: null,
         name: "",
@@ -33,107 +35,157 @@
         contact: "",
         emailAddress: "",
         website: "",
-        image: null
+        image: null,
+      image2: null,
+      image3: null
     };
-
+  
     onMount(() => {
         auth.onAuthStateChanged((currentUser) => {
             user = currentUser;
         });
         fetchDirectories();
     });
+  
+  
+async function fetchDirectories() {
+    const directoriesCollection = collection(db, 'Directories');
+    
+    // Create a query to filter directories where category is "accommodation"
+    const q = query(directoriesCollection, where("category", "==", "accommodation"));
 
-    async function fetchDirectories() {
-        const directoriesCollection = collection(db, 'Directories');
-
-        try {
-            const directoriesSnapshot = await getDocs(directoriesCollection);
-            directories = directoriesSnapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),     
-            }));
-            console.log('Directories fetched successfully!', directories);
-        } catch (error) {
-            console.error('Error fetching directories: ', error);
-        }
+    try {
+        const directoriesSnapshot = await getDocs(q);
+        directories = directoriesSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),     
+        }));
+        console.log('Accommodation directories fetched successfully!', directories);
+    } catch (error) {
+        console.error('Error fetching accommodation directories: ', error);
     }
-
+}
+  
     const storage = getStorage();
+  
 
     async function handleSaveDirectory() {
-        const directoriesCollection = collection(db, 'Directories');
+    const directoriesCollection = collection(db, 'Directories');
 
-        try {
-            let imageUrl = currentDirectory.image;
-            if (currentDirectory.image instanceof File) {
-                const storageRef = ref(storage, `directory-images/${currentDirectory.image.name}`);
-                await uploadBytes(storageRef, currentDirectory.image);
-                imageUrl = await getDownloadURL(storageRef);
+    try {
+        let imageUrls = await Promise.all([1, 2, 3].map(async (num) => {
+            const image = currentDirectory[`image${num}`];
+            if (image instanceof File) {
+                const storageRef = ref(storage, `directory-images/${Date.now()}_${image.name}`);
+                await uploadBytes(storageRef, image);
+                return await getDownloadURL(storageRef);
+            } else if (typeof image === 'string' && image.startsWith('http')) {
+                return image; // If it's already a URL, return as is
             }
+            return null; // If it's neither a File nor a valid URL, set to null
+        }));
 
-            if (isEditing) {
-                const directoryDoc = doc(directoriesCollection, currentDirectory.id);
-                await updateDoc(directoryDoc, { ...currentDirectory, image: imageUrl });
-                console.log('Directory updated successfully!');
-            } else {
-                await addDoc(directoriesCollection, { ...currentDirectory, image: imageUrl });
-                console.log('Directory added successfully!');
-            }
+        const updatedDirectory = {
+            ...currentDirectory,
+            image: imageUrls[0],
+            image2: imageUrls[1],
+            image3: imageUrls[2]
+        };
 
-            resetForm();
-            fetchDirectories(); // Refresh the list
-            dialogOpen = false;
-        } catch (error) {
-            console.error('Error saving directory: ', error);
-            alert('Error saving directory. Please try again.');
+        // Remove File objects from updatedDirectory
+        delete updatedDirectory.image1;
+        delete updatedDirectory.image2;
+        delete updatedDirectory.image3;
+
+        // Remove id from updatedDirectory if it's null
+        if (updatedDirectory.id === null) {
+            delete updatedDirectory.id;
         }
-    }
 
-    function handleFileChange(event) {
-        currentDirectory.image = event.target.files[0];
-    }
-
-    async function handleDeleteDirectory(directoryId) {
-        const directoriesCollection = collection(db, 'Directories');
-        try {
-            const directoryDoc = doc(directoriesCollection, directoryId);
-            await deleteDoc(directoryDoc);
-            console.log('Directory deleted successfully!');
-            fetchDirectories(); // Fetch updated directory list after deletion
-        } catch (error) {
-            console.error('Error deleting directory: ', error);
+        let savedDirectory;
+        if (isEditing && currentDirectory.id) {
+            const directoryDoc = doc(directoriesCollection, currentDirectory.id);
+            await updateDoc(directoryDoc, updatedDirectory);
+            savedDirectory = { id: currentDirectory.id, ...updatedDirectory };
+            console.log('Directory updated successfully!');
+        } else {
+            const docRef = await addDoc(directoriesCollection, updatedDirectory);
+            savedDirectory = { id: docRef.id, ...updatedDirectory };
+            console.log('Directory added successfully!');
         }
+
+        resetForm();
+        await fetchDirectories(); // Refresh the list
+        dialogOpen = false;
+
+    } catch (error) {
+        console.error('Error saving directory: ', error);
+        alert('Error saving directory. Please try again.');
+    }
+}
+
+function handleFileChange(event, imageNumber) {
+    const file = event.target.files[0];
+    if (file) {
+        currentDirectory[`image${imageNumber}`] = file;
+    }
+}
+
+function removeImage(imageNumber) {
+    currentDirectory[`image${imageNumber === 1 ? '' : imageNumber}`] = null;
+}
+
+function resetForm() {
+    currentDirectory = {
+        id: null,
+        name: "",
+        description: "",
+        category: "accommodation",
+        amenities: "",
+        district: "St Lucia",
+        contact: "",
+        emailAddress: "",
+        website: "",
+        image: null,
+        image2: null,
+        image3: null
+    };
+}
+
+  
+async function handleDeleteDirectory(directoryId) {
+    if (!directoryId) {
+        console.error('Error: No directory ID provided for deletion');
+        return;
     }
 
+    const directoriesCollection = collection(db, 'Directories');
+    try {
+        const directoryDoc = doc(directoriesCollection, directoryId);
+        await deleteDoc(directoryDoc);
+        console.log('Directory deleted successfully!');
+        fetchDirectories(); // Fetch updated directory list after deletion
+    } catch (error) {
+        console.error('Error deleting directory: ', error);
+        alert('Error deleting directory. Please try again.');
+    }
+}
+  
     function handleEditDirectory(directory) {
         isEditing = true;
         currentDirectory = { ...directory };
         dialogOpen = true;
     }
-
+  
     function handleAddNewDirectory() {
         isEditing = false;
         resetForm();
         dialogOpen = true;
     }
-
-    function resetForm() {
-        currentDirectory = {
-            id: null,
-            name: "",
-            description: "",
-            category: "accommodation",
-            amenities: "",
-            district: "St Lucia",
-            contact: "",
-            emailAddress: "",
-            website: "",
-            image: null
-        };
-    }
-</script>
-
-<div class="p-6">
+  
+  </script>
+  
+  <div class="p-6">
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-bold">Tourism Directories</h1>
         <Button on:click={handleAddNewDirectory}>Add Directory</Button>
@@ -171,56 +223,81 @@
             </Card>
         {/each}
     </div>
-</div>
-
-<Dialog.Root bind:open={dialogOpen}>
-    <Dialog.Content class="sm:max-w-[425px]">
-        <Dialog.Header>
-            <Dialog.Title>{isEditing ? 'Edit Directory' : 'Add Directory'}</Dialog.Title>
-            <Dialog.Description>
-                {isEditing ? 'Edit the details of the existing directory.' : 'Fill out the form to add a new tourism directory.'}
-            </Dialog.Description>
-        </Dialog.Header>
+  </div>
+  
+  <Dialog.Root bind:open={dialogOpen}>
+    <Dialog.Content class="sm:max-w-[425px] max-h-[80vh] overflow-y-auto">
+      <Dialog.Header>
+        <Dialog.Title>{isEditing ? 'Edit Directory' : 'Add Directory'}</Dialog.Title>
+        <Dialog.Description>
+          {isEditing ? 'Edit the details of the existing directory.' : 'Fill out the form to add a new tourism directory.'}
+        </Dialog.Description>
+      </Dialog.Header>
+      <div class="grid gap-4">
         <div class="grid gap-2">
-            <Label for="name">Name of the directory</Label>
-            <Input id="name" bind:value={currentDirectory.name} placeholder="Enter directory name" />
+          <Label for="name">Name of the directory</Label>
+          <Input id="name" bind:value={currentDirectory.name} placeholder="Enter directory name" />
         </div>
         <div class="grid gap-2">
-            <Label for="amenities">Amenities</Label>
-            <Input id="amenities" bind:value={currentDirectory.amenities} placeholder="Enter amenities" />
-        </div>
-        <!-- <div class="grid gap-2">
-            <Label for="district">District</Label>
-            <Input id="district" bind:value={currentDirectory.district} placeholder="Enter district" />
-        </div> -->
-        <div class="grid gap-2">
-            <Label for="contact">Contact</Label>
-            <Input id="contact" bind:value={currentDirectory.contact} placeholder="Enter contact information" />
+          <Label for="description">Description</Label>
+          <Textarea
+            id="description"
+            bind:value={currentDirectory.description}
+            placeholder="Describe the directory"
+          />
         </div>
         <div class="grid gap-2">
-            <Label for="email">Email</Label>
-            <Input id="email" bind:value={currentDirectory.emailAddress} placeholder="Enter email address" />
+          <Label for="amenities">Amenities</Label>
+          <Input id="amenities" bind:value={currentDirectory.amenities} placeholder="Enter amenities" />
         </div>
         <div class="grid gap-2">
-            <Label for="website">Website</Label>
-            <Input id="website" bind:value={currentDirectory.website} placeholder="Enter website URL" />
+          <Label for="district">District</Label>
+          <Input id="district" bind:value={currentDirectory.district} placeholder="Enter district" />
         </div>
         <div class="grid gap-2">
-            <Label for="description">Description</Label>
-            <Textarea
-                id="description"
-                bind:value={currentDirectory.description}
-                placeholder="Describe the directory"
-            />
+          <Label for="contact">Contact</Label>
+          <Input id="contact" bind:value={currentDirectory.contact} placeholder="Enter contact information" />
         </div>
         <div class="grid gap-2">
-            <Label for="image">Directory Image</Label>
-            <Input id="image" type="file" accept="image/*" on:change={handleFileChange} />
+          <Label for="email">Email</Label>
+          <Input id="email" bind:value={currentDirectory.emailAddress} placeholder="Enter email address" />
         </div>
-        <Dialog.Footer>
-            <Button type="submit" on:click={handleSaveDirectory}>
-                {isEditing ? 'Save Changes' : 'Add Directory'}
-            </Button>
-        </Dialog.Footer>
+        <div class="grid gap-2">
+          <Label for="website">Website</Label>
+          <Input id="website" bind:value={currentDirectory.website} placeholder="Enter website URL" />
+        </div>
+        {#each [1, 2, 3] as imageNum}
+          <div class="grid gap-2">
+            <Label for="image{imageNum}">Directory Image {imageNum}</Label>
+            <Input id="image{imageNum}" type="file" accept="image/*" on:change={(e) => handleFileChange(e, imageNum)} />
+            {#if currentDirectory[`image${imageNum}`]}
+              <div class="relative">
+                <img 
+                  src={currentDirectory[`image${imageNum}`] instanceof File 
+                    ? URL.createObjectURL(currentDirectory[`image${imageNum}`]) 
+                    : currentDirectory[`image${imageNum}`]} 
+                  alt="Preview {imageNum}" 
+                  class="w-full h-32 object-cover rounded" 
+                />
+                <button
+                  class="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1"
+                  on:click={() => removeImage(imageNum)}
+                >
+                  X
+                </button>
+              </div>
+            {:else}
+              <div class="w-full h-32 bg-gray-200 flex items-center justify-center rounded">
+                <span class="text-gray-500">No image uploaded</span>
+              </div>
+            {/if}
+          </div>
+        {/each}
+      </div>
+      <Dialog.Footer>
+        <Button type="submit" on:click={handleSaveDirectory}>
+          {isEditing ? 'Save Changes' : 'Add Directory'}
+        </Button>
+      </Dialog.Footer>
     </Dialog.Content>
-</Dialog.Root>
+  </Dialog.Root>

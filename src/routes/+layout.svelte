@@ -26,11 +26,11 @@ onMount(() => {
   const unsubscribe = auth.onAuthStateChanged(async (user) => {
     const currentPath = window.location.pathname;
     if (!user && !nonAuthRoutes.includes(currentPath)) {
-      window.location.href = '/dashboard';
+      window.location.href = '/activities';
       return;
     }
 	if( user && currentPath == '/') {
-		window.location.href = '/dashboard';
+		window.location.href = '/activities';
 	}
     if (!user) {
       return;
