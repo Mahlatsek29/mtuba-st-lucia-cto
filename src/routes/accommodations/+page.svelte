@@ -97,7 +97,6 @@ async function fetchDirectories() {
         delete updatedDirectory.image2;
         delete updatedDirectory.image3;
 
-        // Remove id from updatedDirectory if it's null
         if (updatedDirectory.id === null) {
             delete updatedDirectory.id;
         }
