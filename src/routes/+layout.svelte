@@ -20,17 +20,17 @@
 		});
 	}
 
-	 const nonAuthRoutes = ['/', '/signup','/dashboard','/accomodation'];
+	 const nonAuthRoutes = ['/', '/signup','/dashboard','/accommodations'];
 
 onMount(() => {
   const unsubscribe = auth.onAuthStateChanged(async (user) => {
     const currentPath = window.location.pathname;
     if (!user && !nonAuthRoutes.includes(currentPath)) {
-      window.location.href = '/activities';
+      window.location.href = '/accommodations';
       return;
     }
 	if( user && currentPath == '/') {
-		window.location.href = '/activities';
+		window.location.href = '/accommodations';
 	}
     if (!user) {
       return;

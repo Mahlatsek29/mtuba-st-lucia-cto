@@ -5,17 +5,14 @@
 	import { get } from 'svelte/store';
 	import { authHandles } from '../store/store';
 	import { onMount } from 'svelte';
+    import Button from "$lib/components/ui/button/button.svelte";
 
 
 	let email = '';
 	let password = '';
 	let errorMessage = '';
 
-let Button;
-onMount(async () => {
-  const module = await import('$lib/components/ui/button/button.svelte');
-  Button = module.default;
-});
+
 
 
 
