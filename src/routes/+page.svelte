@@ -20,7 +20,7 @@
 		try {
 			await authHandles.login(email, password);
 			// Redirect to the appropriate page after successful login, if needed
-			window.location.href = '/'; // Change this to your desired path
+			window.location.href = '/dashboard'; // Change this to your desired path
 		} catch (error) {
 			errorMessage = error.message;
 		}

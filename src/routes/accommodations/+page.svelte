@@ -27,7 +27,7 @@
     doc,
     updateDoc,
   } from "firebase/firestore";
-
+   import ImageCarousel from "../ImageCarousel.svelte";
   let user = null;
   let directories = [];
   let isEditing = false;
@@ -207,7 +207,7 @@
 
 <div class="p-6">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Tourism Directories</h1>
+    <h1 class="text-2xl font-bold">Accommodation Directories</h1>
     <Button on:click={handleAddNewDirectory}>Add Directory</Button>
   </div>
 
@@ -217,14 +217,14 @@
     {#each directories as dir (dir.id)}
       <Card>
         <!-- Display the first image or a placeholder -->
-        <img
+        <!-- <img
           src={dir.images && dir.images.length > 0 ? dir.images[0] : "/placeholder-image.jpg"}
           alt={dir.name}
           width={300}
           height={200}
           class="w-full h-48 object-cover rounded-t-lg"
-        />
-
+        /> -->
+        <ImageCarousel images={dir.images} />
         <div class="p-4">
           <h3 class="text-lg font-bold">{dir.name}</h3>
           <p class="text-gray-500">{dir.district}</p>
@@ -234,7 +234,7 @@
           <p class="text-gray-500 mt-2">Website: {dir.website}</p>
         </div>
         <div class="p-4 flex justify-between">
-          <Button
+          <!-- <Button
             variant="outline"
             size="sm"
             on:click={() => {
@@ -243,7 +243,7 @@
             }}
           >
             Edit
-          </Button>
+          </Button> -->
           <Button
             variant="outline"
             size="sm"

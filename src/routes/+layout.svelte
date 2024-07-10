@@ -2,12 +2,11 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { webVitals } from '$lib/vitals';
-	import Header from './Header.svelte';
-	import {onMount} from 'svelte'
-     import "../app.css";
+	import { onMount } from 'svelte'
+    import "../app.css";
 	import { auth, db } from '$lib/firebase/firebase';
 	import { doc, getDoc, setDoc } from 'firebase/firestore';
-	import {authStore} from '../store/store'
+	import { authStore } from '../store/store'
 
 	/** @type {import('./$types').LayoutServerData} */
 	export let data;
@@ -20,53 +19,50 @@
 		});
 	}
 
-	 const nonAuthRoutes = ['/', '/signup','/dashboard','/accommodations'];
+	const nonAuthRoutes = ['/', '/signup'];
 
-onMount(() => {
-  const unsubscribe = auth.onAuthStateChanged(async (user) => {
-    const currentPath = window.location.pathname;
-    if (!user && !nonAuthRoutes.includes(currentPath)) {
-      window.location.href = '/accommodations';
-      return;
-    }
-	if( user && currentPath == '/') {
-		window.location.href = '/accommodations';
-	}
-    if (!user) {
-      return;
-    }
+	onMount(() => {
+		const unsubscribe = auth.onAuthStateChanged(async (user) => {
+			const currentPath = window.location.pathname;
+			if (!user && !nonAuthRoutes.includes(currentPath)) {
+				console.log("there is no user and current path is ", currentPath)
+				window.location.href = '/';
+				return;
+			}
+			if (user && currentPath == '/') {
+				console.log("user is ", user)
+				window.location.href = '/dashboard';
+			}
+			if (!user) {
+				return;
+			}
 
-    let dataToSetToStore = { email: user?.email };
-    const docRef = doc(db, 'users', user.uid);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists()) {
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(
-        userRef,
-        dataToSetToStore,
-        {
-          merge: true
-        }
-      );
-    } else {
-      const userData = docSnap.data();
-      dataToSetToStore = userData;
-    }
+			const docRef = doc(db, 'users', user.uid);
+			const docSnap = await getDoc(docRef);
+			let dataToSetToStore;
 
-    authStore.update((curr) => {
-      return {
-        ...curr,
-        user,
-        data: dataToSetToStore,
-        loading: false
-      };
-    });
-  });
-  
-  return () => unsubscribe();
-});
+			if (!docSnap.exists()) {
+				dataToSetToStore = {
+					email: user?.email,					
+				};
+				await setDoc(docRef, dataToSetToStore, { merge: true });
+			} else {
+				dataToSetToStore = docSnap.data();
+			}
+
+			authStore.update((curr) => ({
+				...curr,
+				user,
+				data: dataToSetToStore,
+				loading: false
+			}));
+
+		
+		});
+
+		return () => unsubscribe();
+	});
 </script>
-
 <div class="app">
 	<!-- <Header /> -->
 
