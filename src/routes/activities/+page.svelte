@@ -1,7 +1,7 @@
 <script>
   import Button from "$lib/components/ui/button/button.svelte";
   import { buttonVariants } from "$lib/components/ui/button";
-  import Card from "$lib/components/ui/card/card.svelte";
+  import * as Card from "$lib/components/ui/card";
   import Input from "$lib/components/ui/input/input.svelte";
   import Label from "$lib/components/ui/label/label.svelte";
   import Textarea from "$lib/components/ui/textarea/textarea.svelte";
@@ -212,55 +212,111 @@
 <div class="p-6">
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-bold">Activity Directories</h1>
-    <Button on:click={handleAddNewDirectory}>Add Directory</Button>
+    <!-- <Button on:click={handleAddNewDirectory}>Add Directory</Button> -->
   </div>
+<div
+    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 py-10"
+  >
+    <div>
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>Mtubtuba region</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <div class="flex items-center justify-between">
+            <div>
+              <!-- <div class="text-2xl font-bold">{accommodationCount}</div> -->
+              <div class="text-muted-foreground">Total</div>
+            </div>
 
+            <div>
+              <Button href={`/activities/${encodeURIComponent("Mtubatuba")}`}
+                >View</Button
+              >
+            </div>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    </div>
+    <div>
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>St Lucia region</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <div class="flex items-center justify-between">
+            <div>
+              <!-- <div class="text-2xl font-bold">{activityCount}</div> -->
+              <div class="text-muted-foreground">Total</div>
+            </div>
+
+            <div>
+              <Button href={`/activities/${encodeURIComponent("St Lucia")}`}
+                >View</Button
+              >
+            </div>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    </div>
+    <div>
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>Dukuduku Region</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <div class="flex items-center justify-between">
+            <!-- <div>
+                            <div class="text-2xl font-bold">{activityCount}</div>
+                            <div class="text-muted-foreground">Total</div>
+                        </div> -->
+
+            <div>
+             <Button href={`/activities/${encodeURIComponent("Dukuduku")}`}
+                >View</Button
+              >
+            </div>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    </div>
+    <div>
+      <Card.Root>
+        <Card.Header>
+          <Card.Title>Mfekaki region</Card.Title>
+        </Card.Header>
+        <Card.Content>
+          <div class="flex items-center justify-between">
+            <!-- <div>
+                            <div class="text-2xl font-bold">{activityCount}</div>
+                            <div class="text-muted-foreground">Total</div>
+                        </div> -->
+
+            <div>
+              <Button href={`/activities/${encodeURIComponent("Mfekaki")}`}
+                >View</Button
+              >
+            </div>
+          </div>
+        </Card.Content>
+      </Card.Root>
+    </div>
+  </div>
   <div
     class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
   >
     {#each directories as dir (dir.id)}
-      <Card>
-        <!-- Display the first image or a placeholder -->
-        <!-- <img
-          src={dir.images && dir.images.length > 0 ? dir.images[0] : "/placeholder-image.jpg"}
-          alt={dir.name}
-          width={300}
-          height={200}
-          class="w-full h-48 object-cover rounded-t-lg"
-        /> -->
+      <Card.Root>
+       
 
           <ImageCarousel images={dir.images} />
         <div class="p-4">
           <h3 class="text-lg font-bold">{dir.name}</h3>
-          <p class="text-gray-500">{dir.district}</p>
-          <p class="text-gray-600">{dir.description}</p>
-          <p class="text-gray-500 mt-2">Amenities: {dir.amenities}</p>
-          <p class="text-gray-500 mt-2">Email: {dir.emailAddress}</p>
-          <p class="text-gray-500 mt-2">Website: {dir.website}</p>
+          <p class="text-gray-500">{dir.district}</p>          
+          
         </div>
-        <div class="p-4 flex justify-between">
-          <!-- <Button
-            variant="outline"
-            size="sm"
-            on:click={() => {
-              console.log("Edit button clicked. dir object:", dir);
-              handleEditDirectory(dir);
-            }}
-          >
-            Edit
-          </Button> -->
-          <Button
-            variant="outline"
-            size="sm"
-            on:click={() => {
-              console.log("Delete button clicked. dir object:", dir);
-              handleDeleteDirectory(dir.id);
-            }}
-          >
-            Delete
-          </Button>
-        </div>
-      </Card>
+       
+      </Card.Root>
     {/each}
   </div>
 </div>
