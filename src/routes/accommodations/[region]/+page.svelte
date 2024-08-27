@@ -22,13 +22,12 @@ import { collection, addDoc, query, where, getDocs, getDoc, deleteDoc, doc, upda
   let directories = [];
   let isEditing = false;
   let dialogOpen = false;
-  
-
+ 
   let currentDirectory = {
     id: null,
     name: "",
     description: "",
-    category: "activity",
+    category: "accommodation",
     amenities: "",
     district: region,
     contact: "",
@@ -53,7 +52,7 @@ import { collection, addDoc, query, where, getDocs, getDoc, deleteDoc, doc, upda
     const q = query(
       directoriesCollection,
       where("district", "==", region),
-      where("category", "==", "accommodation")
+      where("category", "==", "accommodation"),
     );
 
     try {
@@ -66,6 +65,7 @@ import { collection, addDoc, query, where, getDocs, getDoc, deleteDoc, doc, upda
         "Accommodation directories fetched successfully for region:", region,
         directories
       );
+       
     } catch (error) {
       console.error("Error fetching accommodation directories: ", error);
     }
@@ -228,7 +228,7 @@ async function handleDeleteDirectory(directoryId) {
       id: null,
       name: "",
       description: "",
-      category: "activity",
+      category: "accommodation",
       amenities: "",
       district: region,
       contact: "",
