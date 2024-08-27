@@ -40,8 +40,8 @@
 			{/if}
 	  <div class="space-y-4">
 		<div class="space-y-2">
-		  <Label bind:value={email} for="email">Email</Label>
-		  <Input id="email" type="email" placeholder="m@example.com" required />
+		  <Label  for="email">Email</Label>
+		  <Input bind:value={email} id="email" type="email" placeholder="m@example.com" required />
 		</div>
 		<div class="space-y-2">
 		  <div class="flex items-center justify-between">

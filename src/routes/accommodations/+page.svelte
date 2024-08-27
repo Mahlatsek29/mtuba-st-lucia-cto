@@ -1,7 +1,7 @@
 <script>
   import Button from "$lib/components/ui/button/button.svelte";
   import { buttonVariants } from "$lib/components/ui/button";
-  // import Card from "$lib/components/ui/card/card.svelte";
+  import * as Card from "$lib/components/ui/card";
   import Input from "$lib/components/ui/input/input.svelte";
   import Label from "$lib/components/ui/label/label.svelte";
   import Textarea from "$lib/components/ui/textarea/textarea.svelte";
@@ -10,8 +10,7 @@
   import { onMount } from "svelte";
   import { writable } from "svelte/store";
   import { auth, db } from "$lib/firebase/firebase";
-  import * as Card from "$lib/components/ui/card";
-
+  
   import {
     getStorage,
     ref,
@@ -29,12 +28,16 @@
     doc,
     updateDoc,
   } from "firebase/firestore";
-  import ImageCarousel from "../ImageCarousel.svelte";
+    import ImageCarousel from "../ImageCarousel.svelte";
 
   let user = null;
   let directories = [];
   let isEditing = false;
   let dialogOpen = false;
+  let stLuciaRegion = 0;
+ let mtubatubaRegion = 0;
+ let mfekakiRegion = 0;
+ let dukudukuRegion = 0;
 
   let currentDirectory = {
     id: null,
@@ -55,8 +58,9 @@
     });
     fetchDirectories();
   });
+  
 
-  $: console.log("dialogOpen changed:", dialogOpen);
+ 
 
   async function fetchDirectories() {
     const directoriesCollection = collection(db, "Directories");
@@ -71,10 +75,10 @@
         id: doc.id,
         ...doc.data(),
       }));
-      console.log(
-        "Accommodation directories fetched successfully!",
-        directories,
-      );
+      stLuciaRegion = directories.filter(dir => dir.district === "St Lucia").length;
+    mtubatubaRegion = directories.filter(dir => dir.district === "Mtubatuba").length;
+    dukudukuRegion = directories.filter(dir => dir.district === "Dukuduku").length;
+    mfekakiRegion = directories.filter(dir => dir.district === "Mfekaki").length;
     } catch (error) {
       console.error("Error fetching accommodation directories: ", error);
     }
@@ -91,11 +95,8 @@
       let imageUrls = [];
 
       for (const image of currentDirectory.images) {
-        const imageBlob = await fetch(image).then((res) => res.blob());
-        const storageRef = ref(
-          storage,
-          `images/${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        );
+        const imageBlob = await fetch(image).then(res => res.blob());
+        const storageRef = ref(storage, `images/${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
         await uploadBytes(storageRef, imageBlob);
         const downloadURL = await getDownloadURL(storageRef);
         imageUrls.push(downloadURL);
@@ -156,7 +157,7 @@
   function handleFileChange(event) {
     const files = event.target.files;
     if (files.length > 0) {
-      Array.from(files).forEach((file) => {
+      Array.from(files).forEach(file => {
         const reader = new FileReader();
         reader.onloadend = () => {
           currentDirectory.images = [...currentDirectory.images, reader.result];
@@ -167,9 +168,7 @@
   }
 
   function removeImage(index) {
-    currentDirectory.images = currentDirectory.images.filter(
-      (_, i) => i !== index,
-    );
+    currentDirectory.images = currentDirectory.images.filter((_, i) => i !== index);
   }
 
   async function handleDeleteDirectory(directoryId) {
@@ -202,7 +201,7 @@
       id: null, // Reset id when adding a new directory
       name: "",
       description: "",
-      category: "accommodation",
+      category: "accomodation",
       amenities: "",
       district: "St Lucia",
       contact: "",
@@ -229,7 +228,7 @@
         <Card.Content>
           <div class="flex items-center justify-between">
             <div>
-              <!-- <div class="text-2xl font-bold">{accommodationCount}</div> -->
+              <div class="text-2xl font-bold">{mtubatubaRegion}</div>
               <div class="text-muted-foreground">Total</div>
             </div>
 
@@ -250,7 +249,7 @@
         <Card.Content>
           <div class="flex items-center justify-between">
             <div>
-              <!-- <div class="text-2xl font-bold">{activityCount}</div> -->
+              <div class="text-2xl font-bold">{stLuciaRegion}</div>
               <div class="text-muted-foreground">Total</div>
             </div>
 
@@ -270,10 +269,10 @@
         </Card.Header>
         <Card.Content>
           <div class="flex items-center justify-between">
-            <!-- <div>
-                            <div class="text-2xl font-bold">{activityCount}</div>
+            <div>
+                            <div class="text-2xl font-bold">{dukudukuRegion}</div>
                             <div class="text-muted-foreground">Total</div>
-                        </div> -->
+                        </div>
 
             <div>
              <Button href={`/accommodations/${encodeURIComponent("Dukuduku")}`}
@@ -291,10 +290,10 @@
         </Card.Header>
         <Card.Content>
           <div class="flex items-center justify-between">
-            <!-- <div>
-                            <div class="text-2xl font-bold">{activityCount}</div>
+            <div>
+                            <div class="text-2xl font-bold">{mfekakiRegion}</div>
                             <div class="text-muted-foreground">Total</div>
-                        </div> -->
+                        </div>
 
             <div>
               <Button href={`/accommodations/${encodeURIComponent("Mfekaki")}`}

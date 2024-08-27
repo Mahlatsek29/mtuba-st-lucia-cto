@@ -11,31 +11,18 @@
   import { writable } from "svelte/store";
   import { auth, db } from "$lib/firebase/firebase";
   import { page } from "$app/stores";
-  import {
-    getStorage,
-    ref,
-    uploadBytes,
-    getDownloadURL,
-    deleteObject,
-  } from "firebase/storage";
-  import {
-    collection,
-    addDoc,
-    query,
-    where,
-    getDocs,
-    deleteDoc,
-    doc,
-    updateDoc,
-  } from "firebase/firestore";
-   import ImageCarousel from "../../ImageCarousel.svelte";
-   const region = $page.params.region;
-   console.log("region is ", region);
+  import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { collection, addDoc, query, where, getDocs, getDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
+
+  import ImageCarousel from "../../ImageCarousel.svelte";
+  
+  const region = $page.params.region;
+  
   let user = null;
   let directories = [];
   let isEditing = false;
   let dialogOpen = false;
-
+ 
   let currentDirectory = {
     id: null,
     name: "",
@@ -46,104 +33,137 @@
     contact: "",
     emailAddress: "",
     website: "",
-    images: [], // Changed from image to images
+    images: [],
   };
    
   onMount(() => {
     auth.onAuthStateChanged((currentUser) => {
       user = currentUser;
+      
     });
+    
     fetchDirectories();
   });
 
   $: console.log("dialogOpen changed:", dialogOpen);
 
- async function fetchDirectories() {
-  const directoriesCollection = collection(db, "Directories");
-  const q = query(
-    directoriesCollection,
-    where("district", "==", region),
-    where("category", "==", "activity")
-  );
-
-  try {
-    const directoriesSnapshot = await getDocs(q);
-    directories = directoriesSnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
-    console.log(
-      "Accommodation directories fetched successfully for region:", region,
-      directories
+  async function fetchDirectories() {
+    const directoriesCollection = collection(db, "Directories");
+    const q = query(
+      directoriesCollection,
+      where("district", "==", region),
+      where("category", "==", "activity")
     );
-  } catch (error) {
-    console.error("Error fetching accommodation directories: ", error);
+
+    try {
+      const directoriesSnapshot = await getDocs(q);
+      directories = directoriesSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      console.log(
+        "Accommodation directories fetched successfully for region:", region,
+        directories
+      );
+       
+    } catch (error) {
+      console.error("Error fetching accommodation directories: ", error);
+    }
   }
-}
 
   const storage = getStorage();
 
-  async function handleSaveDirectory() {
-    console.log("handleSaveDirectory called", currentDirectory);
+ 
+// Function to delete a single image from storage
+async function deleteImageFromStorage(imageUrl) {
+  try {
+    const imageRef = ref(storage, imageUrl);
+    await deleteObject(imageRef);
+    console.log("Image deleted successfully from storage");
+  } catch (error) {
+    console.error("Error deleting image from storage: ", error);
+  }
+}
 
-    const directoriesCollection = collection(db, "Directories");
-    console.log("currentDirectory.id is ", currentDirectory.id);
-    try {
-      let imageUrls = [];
+// Function to delete all images associated with a directory
+async function deleteDirectoryImages(images) {
+  for (const imageUrl of images) {
+    await deleteImageFromStorage(imageUrl);
+  }
+}
 
-      for (const image of currentDirectory.images) {
+// Updated handleSaveDirectory function
+async function handleSaveDirectory() {
+  console.log("handleSaveDirectory called", currentDirectory);
+
+  const directoriesCollection = collection(db, "Directories");
+  console.log("currentDirectory.id is ", currentDirectory.id);
+  try {
+    let imageUrls = [];
+
+    // Upload new images
+    for (const image of currentDirectory.images) {
+      if (image.startsWith('data:')) { // Check if it's a new image (data URL)
         const imageBlob = await fetch(image).then(res => res.blob());
         const storageRef = ref(storage, `images/${Date.now()}-${Math.random().toString(36).substr(2, 9)}`);
         await uploadBytes(storageRef, imageBlob);
         const downloadURL = await getDownloadURL(storageRef);
         imageUrls.push(downloadURL);
-      }
-
-      if (isEditing && currentDirectory.id) {
-        // Update existing directory
-        const docRef = doc(db, "Directories", currentDirectory.id);
-        await updateDoc(docRef, {
-          name: currentDirectory.name,
-          description: currentDirectory.description,
-          category: currentDirectory.category,
-          amenities: currentDirectory.amenities,
-          district: currentDirectory.district,
-          contact: currentDirectory.contact,
-          emailAddress: currentDirectory.emailAddress,
-          website: currentDirectory.website,
-          images: imageUrls,
-        });
-        console.log("Directory updated successfully!");
       } else {
-        // Add new directory
-        const newDocRef = await addDoc(directoriesCollection, {
-          name: currentDirectory.name,
-          description: currentDirectory.description,
-          category: currentDirectory.category,
-          amenities: currentDirectory.amenities,
-          district: currentDirectory.district,
-          contact: currentDirectory.contact,
-          emailAddress: currentDirectory.emailAddress,
-          website: currentDirectory.website,
-          images: imageUrls,
-        });
-        currentDirectory.id = newDocRef.id; // Capture the new document ID
-        console.log("New directory added successfully!");
+        imageUrls.push(image); // Keep existing image URLs
       }
-
-      // Refresh the list of directories
-      await fetchDirectories();
-
-      // Close the dialog and reset the form
-      dialogOpen = false;
-      resetForm();
-    } catch (error) {
-      console.error("Error saving directory: ", error);
     }
+
+    if (isEditing && currentDirectory.id) {
+      // Get the existing directory data
+      const docRef = doc(db, "Directories", currentDirectory.id);
+      const docSnap = await getDoc(docRef);
+      const existingData = docSnap.data();
+
+      // Delete removed images from storage
+      const removedImages = existingData.images.filter(img => !imageUrls.includes(img));
+      await deleteDirectoryImages(removedImages);
+
+      // Update existing directory
+      await updateDoc(docRef, {
+        name: currentDirectory.name,
+        description: currentDirectory.description,
+        category: currentDirectory.category,
+        amenities: currentDirectory.amenities,
+        district: currentDirectory.district,
+        contact: currentDirectory.contact,
+        emailAddress: currentDirectory.emailAddress,
+        website: currentDirectory.website,
+        images: imageUrls,
+      });
+      console.log("Directory updated successfully!");
+    } else {
+      // Add new directory
+      const newDocRef = await addDoc(directoriesCollection, {
+        name: currentDirectory.name,
+        description: currentDirectory.description,
+        category: currentDirectory.category,
+        amenities: currentDirectory.amenities,
+        district: currentDirectory.district,
+        contact: currentDirectory.contact,
+        emailAddress: currentDirectory.emailAddress,
+        website: currentDirectory.website,
+        images: imageUrls,
+      });
+      currentDirectory.id = newDocRef.id;
+      console.log("New directory added successfully!");
+    }
+
+    // Refresh the list of directories
+    await fetchDirectories();
+
+    // Close the dialog and reset the form
+    dialogOpen = false;
+    resetForm();
+  } catch (error) {
+    console.error("Error saving directory: ", error);
   }
-
-
-
+}
   function handleFileChange(event) {
     const files = event.target.files;
     if (files.length > 0) {
@@ -161,24 +181,35 @@
     currentDirectory.images = currentDirectory.images.filter((_, i) => i !== index);
   }
 
-  async function handleDeleteDirectory(directoryId) {
-    if (!directoryId) {
-      console.error("Error: Directory ID is null or undefined");
-      return;
-    }
+ // Updated handleDeleteDirectory function
+async function handleDeleteDirectory(directoryId) {
+  if (!directoryId) {
+    console.error("Error: Directory ID is null or undefined");
+    return;
+  }
 
-    if (confirm("Are you sure you want to delete this directory?")) {
-      try {
-        await deleteDoc(doc(db, "Directories", directoryId));
-        console.log("Directory deleted successfully!");
+  if (confirm("Are you sure you want to delete this directory?")) {
+    try {
+      // Get the directory data
+      const docRef = doc(db, "Directories", directoryId);
+      const docSnap = await getDoc(docRef);
+      const directoryData = docSnap.data();
 
-        // Refresh the list of directories
-        await fetchDirectories();
-      } catch (error) {
-        console.error("Error deleting directory: ", error);
-      }
+      // Delete images from storage
+      await deleteDirectoryImages(directoryData.images);
+
+      // Delete the document from Firestore
+      await deleteDoc(docRef);
+      console.log("Directory and associated images deleted successfully!");
+
+      // Refresh the list of directories
+      await fetchDirectories();
+    } catch (error) {
+      console.error("Error deleting directory: ", error);
     }
   }
+}
+
 
   function handleAddNewDirectory() {
     isEditing = false;
@@ -186,9 +217,15 @@
     dialogOpen = true;
   }
 
+  function handleEditDirectory(directory) {
+    isEditing = true;
+    currentDirectory = { ...directory };
+    dialogOpen = true;
+  }
+
   function resetForm() {
     currentDirectory = {
-      id: null, // Reset id when adding a new directory
+      id: null,
       name: "",
       description: "",
       category: "activity",
@@ -197,7 +234,7 @@
       contact: "",
       emailAddress: "",
       website: "",
-      images: [], // Changed from image to images
+      images: [],
     };
   }
 </script>
@@ -208,9 +245,7 @@
     <Button on:click={handleAddNewDirectory}>Add Directory</Button>
   </div>
 
-  <div
-    class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-  >
+  <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
     {#each directories as dir (dir.id)}
       <Card>        
         <ImageCarousel images={dir.images} />
@@ -223,7 +258,13 @@
           <p class="text-gray-500 mt-2">Website: {dir.website}</p>
         </div>
         <div class="p-4 flex justify-between">
-          
+          <Button
+            variant="outline"
+            size="sm"
+            on:click={() => handleEditDirectory(dir)}
+          >
+            Edit
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -270,16 +311,7 @@
           class="col-span-3"
         />
       </div>
-      <!-- <div class="grid grid-cols-4 items-center gap-4">
-        <Label class="text-right" for="district">District</Label>
-        <Select
-          id="district"
-          bind:value={currentDirectory.district}
-          class="col-span-3"
-        >
-          <option value="St Lucia">St Lucia</option>
-                </Select>
-      </div> -->
+     
       <div class="grid grid-cols-4 items-center gap-4">
         <Label class="text-right" for="contact">Contact</Label>
         <Input

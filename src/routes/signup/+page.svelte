@@ -65,11 +65,11 @@
       Sign Up
     </Button>
   </div>
-  <hr class="my-8 border-t border-gray-300" />
-  <div class="space-y-4">
+  <!-- <hr class="my-8 border-t border-gray-300" /> -->
+  <!-- <div class="space-y-4">
     <Button class="w-full py-2 px-4 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500">
-      <!-- <ChromeIcon class="mr-2 h-4 w-4" /> -->
+      <ChromeIcon class="mr-2 h-4 w-4" />
       Sign up with Google
     </Button>
-  </div>
+  </div> -->
 </div>

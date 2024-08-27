@@ -43,7 +43,7 @@
         try {
             await signOut(auth);
             console.log("User signed out successfully");
-            goto("/login"); // Redirect to login page after logout
+            goto("/"); // Redirect to login page after logout
         } catch (error) {
             console.error("Error signing out: ", error);
         }

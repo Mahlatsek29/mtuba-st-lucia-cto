@@ -1,12 +1,14 @@
 <script>
-	import { browser } from '$app/environment';
-	import { page } from '$app/stores';
-	import { webVitals } from '$lib/vitals';
-	import { onMount } from 'svelte'
-    import "../app.css";
-	import { auth, db } from '$lib/firebase/firebase';
-	import { doc, getDoc, setDoc } from 'firebase/firestore';
-	import { authStore } from '../store/store'
+	import { browser } from "$app/environment";
+	import { page } from "$app/stores";
+	import { webVitals } from "$lib/vitals";
+	import { onMount } from "svelte";
+	import "../app.css";
+	import { auth, db } from "$lib/firebase/firebase";
+	import { doc, getDoc, setDoc } from "firebase/firestore";
+	import { authStore } from "../store/store";
+	import Header from "./Header.svelte";
+	import { goto } from "$app/navigation";
 
 	/** @type {import('./$types').LayoutServerData} */
 	export let data;
@@ -15,65 +17,94 @@
 		webVitals({
 			path: $page.url.pathname,
 			params: $page.params,
-			analyticsId: data.analyticsId
+			analyticsId: data.analyticsId,
 		});
 	}
 
-	const nonAuthRoutes = ['/', '/signup'];
+	const publicRoutes = ["/", "/signup", "/login"];
+
+	function isPublicRoute(path) {
+		return publicRoutes.includes(path);
+	}
+
+	let authChecked = false;
 
 	onMount(() => {
 		const unsubscribe = auth.onAuthStateChanged(async (user) => {
-			const currentPath = window.location.pathname;
-			if (!user && !nonAuthRoutes.includes(currentPath)) {
-				console.log("there is no user and current path is ", currentPath)
-				window.location.href = '/';
-				return;
-			}
-			if (user && currentPath == '/') {
-				console.log("user is ", user)
-				window.location.href = '/dashboard';
-			}
+			const currentPath = $page.url.pathname;
+
 			if (!user) {
-				return;
-			}
-
-			const docRef = doc(db, 'users', user.uid);
-			const docSnap = await getDoc(docRef);
-			let dataToSetToStore;
-
-			if (!docSnap.exists()) {
-				dataToSetToStore = {
-					email: user?.email,					
-				};
-				await setDoc(docRef, dataToSetToStore, { merge: true });
+				authStore.update((curr) => ({
+					...curr,
+					user: null,
+					data: {},
+					loading: false,
+					error: null,
+				}));
 			} else {
-				dataToSetToStore = docSnap.data();
+				try {
+					const docRef = doc(db, "users", user.uid);
+					const docSnap = await getDoc(docRef);
+					let dataToSetToStore;
+
+					if (!docSnap.exists()) {
+						dataToSetToStore = {
+							email: user?.email,
+						};
+						await setDoc(docRef, dataToSetToStore, { merge: true });
+					} else {
+						dataToSetToStore = docSnap.data();
+					}
+
+					authStore.update((curr) => ({
+						...curr,
+						user,
+						data: dataToSetToStore,
+						loading: false,
+						error: null,
+					}));
+				} catch (error) {
+					console.error("Error fetching user data:", error);
+					authStore.update((curr) => ({
+						...curr,
+						error: "Failed to fetch user data",
+						loading: false,
+					}));
+				}
 			}
 
-			authStore.update((curr) => ({
-				...curr,
-				user,
-				data: dataToSetToStore,
-				loading: false
-			}));
-
-		
+			authChecked = true;
 		});
 
 		return () => unsubscribe();
 	});
+
+	$: if (authChecked && $page && $authStore) {
+		const currentPath = $page.url.pathname;
+		if (!$authStore.user && !isPublicRoute(currentPath)) {
+			goto("/");
+		} else if (
+			$authStore.user &&
+			isPublicRoute(currentPath) &&
+			currentPath !== "/"
+		) {
+			goto("/dashboard");
+		}
+	}
 </script>
-<div class="app">
-	<!-- <Header /> -->
 
-	<main>
-		<slot />
-	</main>
-
-	<!-- <footer>
-		<p>visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to learn SvelteKit</p>
-	</footer> -->
-</div>
+{#if !authChecked || $authStore.loading}
+	<div>Loading...</div>
+{:else if $authStore.error}
+	<div>Error: {$authStore.error}</div>
+{:else}
+	<div class="app">
+		<!-- <Header /> -->
+		<main>
+			<slot />
+		</main>
+	</div>
+{/if}
 
 <style>
 	.app {
@@ -89,7 +120,7 @@
 		padding: 1rem;
 		width: 100%;
 		/* max-width: 64rem; */
-		margin: 0 auto;
+		margin: 4rem auto;
 		box-sizing: border-box;
 		min-height: 100vh;
 	}
