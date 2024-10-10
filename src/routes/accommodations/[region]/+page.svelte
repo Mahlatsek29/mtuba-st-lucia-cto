@@ -12,7 +12,7 @@
   import { auth, db } from "$lib/firebase/firebase";
   import { page } from "$app/stores";
   import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { collection, addDoc, query, where, getDocs, getDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
+  import { collection, addDoc, query, where, getDocs, getDoc, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
   import ImageCarousel from "../../ImageCarousel.svelte";
   
