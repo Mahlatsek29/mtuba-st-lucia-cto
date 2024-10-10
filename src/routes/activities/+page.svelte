@@ -347,7 +347,7 @@
         />
       </div>
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label class="text-right" for="amenities">Amenities</Label>
+        <Label class="text-right" for="amenities">Category</Label>
         <Input
           id="amenities"
           bind:value={currentDirectory.amenities}

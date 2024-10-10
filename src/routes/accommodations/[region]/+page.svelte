@@ -253,7 +253,7 @@ async function handleDeleteDirectory(directoryId) {
           <h3 class="text-lg font-bold">{dir.name}</h3>
           <p class="text-gray-500">{dir.district}</p>
           <p class="text-gray-600">{dir.description}</p>
-          <p class="text-gray-500 mt-2">Amenities: {dir.amenities}</p>
+          <p class="text-gray-500 mt-2">Category: {dir.amenities}</p>
           <p class="text-gray-500 mt-2">Email: {dir.emailAddress}</p>
           <p class="text-gray-500 mt-2">Website: {dir.website}</p>
         </div>
@@ -304,7 +304,7 @@ async function handleDeleteDirectory(directoryId) {
         />
       </div>
       <div class="grid grid-cols-4 items-center gap-4">
-        <Label class="text-right" for="amenities">Amenities</Label>
+        <Label class="text-right" for="amenities">Category</Label>
         <Input
           id="amenities"
           bind:value={currentDirectory.amenities}
