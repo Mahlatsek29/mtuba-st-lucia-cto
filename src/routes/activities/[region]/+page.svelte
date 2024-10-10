@@ -241,7 +241,7 @@ async function handleDeleteDirectory(directoryId) {
 
 <div class="p-6">
   <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold">Accommodation Directories</h1>
+    <h1 class="text-2xl font-bold">Activity Directories</h1>
     <Button on:click={handleAddNewDirectory}>Add Directory</Button>
   </div>
 
