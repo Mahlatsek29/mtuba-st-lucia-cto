@@ -94,10 +94,10 @@ async function deleteDirectoryImages(images) {
 
 // Updated handleSaveDirectory function
 async function handleSaveDirectory() {
-  console.log("handleSaveDirectory called", currentDirectory);
+  
 
   const directoriesCollection = collection(db, "Directories");
-  console.log("currentDirectory.id is ", currentDirectory.id);
+  
   try {
     let imageUrls = [];
 
